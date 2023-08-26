@@ -22,9 +22,16 @@ class PuzzleView extends StatelessWidget {
     required this.puzzle,
   });
 
+  int _determineSolutionColumn() {
+    var firstRow = puzzle.rows[0];
+    return firstRow.offset + firstRow.answer.indexOf(puzzle.solution[0]);
+  }
+
   Widget _rowTextInput(BuildContext context, PuzzleRow row) {
     List<Widget> letterWidgets = [];
     FocusNode? focus;
+
+    int solutionColumn = _determineSolutionColumn();
 
     for (var i = 0; i < row.offset; i++) {
       letterWidgets.add(
@@ -37,6 +44,7 @@ class PuzzleView extends StatelessWidget {
         ),
       );
     }
+
     for (var i = 0; i < row.answer.characters.length; i++) {
       var nextFocus = FocusNode();
 
@@ -46,7 +54,12 @@ class PuzzleView extends StatelessWidget {
           child: Container(
             width: 24,
             height: 30,
-            color: Theme.of(context).colorScheme.primaryContainer,
+            decoration: BoxDecoration(
+              color: (i + row.offset == solutionColumn)
+                  ? Colors.red
+                  : Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: const BorderRadius.all(Radius.circular(4)),
+            ),
             alignment: Alignment.center,
             child: TextField(
               focusNode: focus,
