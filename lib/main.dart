@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
-import 'package:krypto/widgets/puzzle_overview.dart';
+import 'package:krypto/widgets/puzzles_list.dart';
 
 void main() async {
   runApp(const MyApp());
@@ -52,7 +52,7 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: PuzzleOverview(),
+      body: const PuzzlesList(),
     );
   }
 }

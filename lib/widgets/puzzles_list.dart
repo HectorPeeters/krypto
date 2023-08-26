@@ -1,22 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 
-final class PuzzleSummary {
-  int id;
-  String title;
-  DateTime startDate;
-  bool published;
+import '../models/puzzle_summary.dart';
+import '../screens/puzzle_screen.dart';
 
-  PuzzleSummary({
-    required this.id,
-    required this.title,
-    required this.startDate,
-    required this.published,
-  });
-}
-
-class PuzzleOverview extends StatelessWidget {
-  final String _getPuzzlesQuery = """
+const String _getPuzzlesQuery = """
 query getPuzzles(\$limit: Int, \$page: Int, \$published: Boolean) {
   puzzles(limit: \$limit, page: \$page, published: \$published) {
     data {
@@ -30,33 +18,31 @@ query getPuzzles(\$limit: Int, \$page: Int, \$published: Boolean) {
     __typename
   }
 }
-  """;
+""";
 
-  const PuzzleOverview({super.key});
+class PuzzlesList extends StatelessWidget {
+  const PuzzlesList({super.key});
 
   List<PuzzleSummary> _convertPuzzles(List<dynamic> data) {
-    return data
-        .map((p) => PuzzleSummary(
-              id: p["id"]!,
-              title: p["title"]!,
-              startDate: DateTime.parse(p["start_date"]!),
-              published: p["published"]!,
-            ))
-        .toList();
+    return data.map(PuzzleSummary.fromJson).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Query(
-      options: QueryOptions(document: gql(_getPuzzlesQuery), variables: const {
-        "page": 1,
-        "limit": 100,
-      }),
-      builder: (QueryResult result,
-          {VoidCallback? refetch, FetchMore? fetchMore}) {
+      options: QueryOptions(
+        document: gql(_getPuzzlesQuery),
+        variables: const {
+          "page": 1,
+          "limit": 100,
+        },
+      ),
+      builder: (result, {refetch, fetchMore}) {
         if (result.hasException) return Text(result.exception.toString());
 
-        if (result.isLoading) return const CircularProgressIndicator();
+        if (result.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
         List? puzzleData = result.data?["puzzles"]?["data"];
 
@@ -71,6 +57,13 @@ query getPuzzles(\$limit: Int, \$page: Int, \$published: Boolean) {
 
             return Card(
               child: ListTile(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => PuzzleScreen(
+                      puzzleSummary: puzzle,
+                    ),
+                  ),
+                ),
                 title: Text(
                   puzzle.title,
                   style: TextStyle(
