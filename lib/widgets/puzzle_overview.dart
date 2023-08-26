@@ -1,6 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 
+final class PuzzleSummary {
+  int id;
+  String title;
+  DateTime startDate;
+  bool published;
+
+  PuzzleSummary({
+    required this.id,
+    required this.title,
+    required this.startDate,
+    required this.published,
+  });
+}
+
 class PuzzleOverview extends StatelessWidget {
   final String _getPuzzlesQuery = """
 query getPuzzles(\$limit: Int, \$page: Int, \$published: Boolean) {
@@ -18,11 +32,23 @@ query getPuzzles(\$limit: Int, \$page: Int, \$published: Boolean) {
 }
   """;
 
+  const PuzzleOverview({super.key});
+
+  List<PuzzleSummary> _convertPuzzles(List<dynamic> data) {
+    return data
+        .map((p) => PuzzleSummary(
+              id: p["id"]!,
+              title: p["title"]!,
+              startDate: DateTime.parse(p["start_date"]!),
+              published: p["published"]!,
+            ))
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Query(
       options: QueryOptions(document: gql(_getPuzzlesQuery), variables: const {
-        "published": true,
         "page": 1,
         "limit": 100,
       }),
@@ -32,9 +58,11 @@ query getPuzzles(\$limit: Int, \$page: Int, \$published: Boolean) {
 
         if (result.isLoading) return const CircularProgressIndicator();
 
-        List? puzzles = result.data?["puzzles"]?["data"];
+        List? puzzleData = result.data?["puzzles"]?["data"];
 
-        if (puzzles == null) return const Text("No puzzles found");
+        if (puzzleData == null) return const Text("No puzzles found");
+
+        var puzzles = _convertPuzzles(puzzleData);
 
         return ListView.builder(
           itemCount: puzzles.length,
@@ -43,7 +71,14 @@ query getPuzzles(\$limit: Int, \$page: Int, \$published: Boolean) {
 
             return Card(
               child: ListTile(
-                title: Text(puzzle["title"]),
+                title: Text(
+                  puzzle.title,
+                  style: TextStyle(
+                    decoration: puzzle.published
+                        ? TextDecoration.none
+                        : TextDecoration.lineThrough,
+                  ),
+                ),
                 trailing: const Icon(Icons.check),
               ),
             );
