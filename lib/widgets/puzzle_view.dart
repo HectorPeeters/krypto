@@ -32,7 +32,7 @@ class _PuzzleViewState extends State<PuzzleView> {
     return firstRow.offset + firstRow.answer.indexOf(widget.puzzle.solution[0]);
   }
 
-  Widget _letterNumber(PuzzleRow row, int charIndex) {
+  int? _getLetterNumber(PuzzleRow row, int charIndex) {
     var numberIndex = row.numbers
         .where((n) => n.index == charIndex)
         .toList()
@@ -48,17 +48,25 @@ class _PuzzleViewState extends State<PuzzleView> {
           .number;
     }
 
-    return number == null
-        ? Container()
-        : Padding(
-            padding: const EdgeInsets.only(left: 1.0),
-            child: Text(
-              number.toString(),
-              style: const TextStyle(
-                fontSize: 10,
-              ),
-            ),
-          );
+    return number;
+  }
+
+  void _fillMatchingLetters(int letterNumber, String letter) {
+    var rows = widget.puzzle.rows;
+
+    for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+      var row = rows[rowIndex];
+
+      for (var letterIndex = 0;
+          letterIndex < row.answer.length;
+          letterIndex++) {
+        var currentLetterNumber = _getLetterNumber(row, letterIndex);
+
+        if (currentLetterNumber == letterNumber) {
+          widget.textControllers[rowIndex][letterIndex].text = letter;
+        }
+      }
+    }
   }
 
   Widget _rowTextInput(BuildContext context, int rowIndex) {
@@ -83,6 +91,8 @@ class _PuzzleViewState extends State<PuzzleView> {
     for (var i = 0; i < row.answer.characters.length; i++) {
       var controller = widget.textControllers[rowIndex][i];
 
+      var letterNumber = _getLetterNumber(row, i);
+
       letterWidgets.add(
         Padding(
           padding: const EdgeInsets.all(1.0),
@@ -105,6 +115,8 @@ class _PuzzleViewState extends State<PuzzleView> {
                   textAlign: TextAlign.center,
                   textAlignVertical: TextAlignVertical.center,
                   inputFormatters: [UpperCaseTextFormatter()],
+                  enableSuggestions: false,
+                  enableInteractiveSelection: false,
                   decoration: const InputDecoration(
                     counterText: '',
                     border: InputBorder.none,
@@ -117,6 +129,10 @@ class _PuzzleViewState extends State<PuzzleView> {
                         TextSelection.collapsed(offset: controller.text.length);
                   },
                   onChanged: (value) {
+                    if (letterNumber != null) {
+                      _fillMatchingLetters(letterNumber, value);
+                    }
+
                     if (value.length == 1 &&
                         i != row.answer.characters.length - 1) {
                       FocusScope.of(context).nextFocus();
@@ -127,7 +143,17 @@ class _PuzzleViewState extends State<PuzzleView> {
                   },
                 ),
               ),
-              _letterNumber(row, i),
+              letterNumber == null
+                  ? Container()
+                  : Padding(
+                      padding: const EdgeInsets.only(left: 1.0),
+                      child: Text(
+                        letterNumber.toString(),
+                        style: const TextStyle(
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
             ],
           ),
         ),
