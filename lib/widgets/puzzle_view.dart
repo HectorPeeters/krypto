@@ -47,6 +47,12 @@ class _PuzzleViewState extends State<PuzzleView> {
   static const double letterWidth = 28;
   static const double letterHeight = 34;
 
+  static const Color unknownColor = Colors.black87;
+  static const Color correctColor = Colors.black87;
+  static const Color incorrectColor = Colors.red;
+
+  List<List<Color>> textColors = [];
+
   int _determineSolutionColumn() {
     var firstRow = widget.puzzle.rows[0];
     return firstRow.offset + firstRow.answer.indexOf(widget.puzzle.solution[0]);
@@ -85,6 +91,43 @@ class _PuzzleViewState extends State<PuzzleView> {
         if (currentLetterNumber == letterNumber) {
           widget.textControllers[rowIndex][letterIndex].text = letter;
         }
+      }
+    }
+  }
+
+  void _checkSolution() {
+    var rows = widget.puzzle.rows;
+
+    for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+      var row = rows[rowIndex];
+
+      for (var letterIndex = 0;
+          letterIndex < row.answer.length;
+          letterIndex++) {
+        var letter =
+            widget.textControllers[rowIndex][letterIndex].text.toLowerCase();
+        if (letter.trim().isEmpty) continue;
+
+        var expected = widget.puzzle.rows[rowIndex].answer[letterIndex];
+
+        setState(() {
+          textColors[rowIndex][letterIndex] =
+              letter == expected ? correctColor : incorrectColor;
+        });
+      }
+    }
+  }
+
+  void _clearTextColors() {
+    var rows = widget.puzzle.rows;
+
+    for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+      var row = rows[rowIndex];
+
+      for (var letterIndex = 0;
+          letterIndex < row.answer.length;
+          letterIndex++) {
+        setState(() => textColors[rowIndex][letterIndex] = unknownColor);
       }
     }
   }
@@ -163,6 +206,9 @@ class _PuzzleViewState extends State<PuzzleView> {
                   inputFormatters: [UpperCaseTextFormatter()],
                   enableSuggestions: false,
                   enableInteractiveSelection: false,
+                  style: TextStyle(
+                    color: textColors[rowIndex][i],
+                  ),
                   decoration: const InputDecoration(
                     counterText: '',
                     border: InputBorder.none,
@@ -187,6 +233,7 @@ class _PuzzleViewState extends State<PuzzleView> {
                       FocusScope.of(context).previousFocus();
                     }
 
+                    _clearTextColors();
                     _saveSolution();
                   },
                 ),
@@ -228,11 +275,23 @@ class _PuzzleViewState extends State<PuzzleView> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      separatorBuilder: (context, index) => const Divider(),
-      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-      itemCount: widget.puzzle.rows.length,
-      itemBuilder: _puzzleRow,
+    if (textColors.isEmpty) {
+      for (var row in widget.puzzle.rows) {
+        textColors.add(row.answer.characters.map((_) => unknownColor).toList());
+      }
+    }
+
+    return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: _checkSolution,
+        child: const Icon(Icons.check),
+      ),
+      body: ListView.separated(
+        separatorBuilder: (context, index) => const Divider(),
+        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+        itemCount: widget.puzzle.rows.length,
+        itemBuilder: _puzzleRow,
+      ),
     );
   }
 }
