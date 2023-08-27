@@ -54,7 +54,7 @@ class PuzzleView extends StatelessWidget {
             width: 24,
             height: 30,
             decoration: BoxDecoration(
-              color: (i + row.offset == solutionColumn)
+              color: (i + row.offset - 1 == solutionColumn)
                   ? Colors.red
                   : Theme.of(context).colorScheme.primaryContainer,
               borderRadius: const BorderRadius.all(Radius.circular(4)),
