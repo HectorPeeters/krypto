@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/puzzle_summary.dart';
 import '../screens/puzzle_screen.dart';
@@ -27,6 +28,16 @@ class PuzzlesList extends StatelessWidget {
     return data.map(PuzzleSummary.fromJson).toList();
   }
 
+  Future<Widget> _getPuzzleIcon(int puzzleId) async {
+    var prefs = await SharedPreferences.getInstance();
+    var solution = prefs.getStringList("puzzle_$puzzleId");
+    if (solution != null) {
+      return const Icon(Icons.arrow_right);
+    } else {
+      return const Icon(Icons.add);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Query(
@@ -34,7 +45,7 @@ class PuzzlesList extends StatelessWidget {
         document: gql(_getPuzzlesQuery),
         variables: const {
           "page": 1,
-          "limit": 100,
+          "limit": 200,
         },
       ),
       builder: (result, {refetch, fetchMore}) {
@@ -74,7 +85,22 @@ class PuzzlesList extends StatelessWidget {
                         : TextDecoration.lineThrough,
                   ),
                 ),
-                trailing: const Icon(Icons.check),
+                trailing: FutureBuilder(
+                  future: _getPuzzleIcon(puzzle.id),
+                  builder: (context, snapshot) {
+                    if (snapshot.data == null) {
+                      return const SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    }
+
+                    return snapshot.data!;
+                  },
+                ),
               ),
             );
           },
