@@ -3,6 +3,7 @@ import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:krypto/models/puzzle.dart';
 import 'package:krypto/models/puzzle_summary.dart';
 import 'package:krypto/widgets/puzzle_view.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const String _getPuzzleById = """
 query getPuzzleById(\$id: ID!) {
@@ -44,6 +45,11 @@ class PuzzleScreen extends StatelessWidget {
     required this.puzzleSummary,
   });
 
+  Future<List<String>?> _getPuzzleSolution(int puzzleId) async {
+    var prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList("puzzle_$puzzleId");
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -71,7 +77,19 @@ class PuzzleScreen extends StatelessWidget {
 
           var puzzle = Puzzle.fromJson(puzzleData);
 
-          return PuzzleView(puzzle: puzzle);
+          return FutureBuilder(
+            future: _getPuzzleSolution(puzzle.id),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              return PuzzleView(
+                puzzle: puzzle,
+                solution: snapshot.data,
+              );
+            },
+          );
         },
       ),
     );

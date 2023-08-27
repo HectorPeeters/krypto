@@ -57,13 +57,15 @@ class PuzzlesList extends StatelessWidget {
 
             return Card(
               child: ListTile(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => PuzzleScreen(
-                      puzzleSummary: puzzle,
+                onTap: () async {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => PuzzleScreen(
+                        puzzleSummary: puzzle,
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
                 title: Text(
                   puzzle.title,
                   style: TextStyle(

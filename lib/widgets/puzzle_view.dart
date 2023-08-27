@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/puzzle.dart';
 import '../test_formatters.dart';
@@ -10,10 +11,29 @@ class PuzzleView extends StatefulWidget {
   PuzzleView({
     super.key,
     required this.puzzle,
+    List<String>? solution,
   }) : textControllers = [] {
-    for (var row in puzzle.rows) {
-      textControllers.add(
-          row.answer.characters.map((_) => TextEditingController()).toList());
+    if (solution == null) {
+      for (var row in puzzle.rows) {
+        textControllers.add(
+            row.answer.characters.map((_) => TextEditingController()).toList());
+      }
+      return;
+    }
+
+    for (var rowIndex = 0; rowIndex < puzzle.rows.length; rowIndex++) {
+      var row = puzzle.rows[rowIndex];
+      List<TextEditingController> controllers = [];
+
+      for (var letterIndex = 0;
+          letterIndex < row.answer.length;
+          letterIndex++) {
+        var letter = solution[rowIndex][letterIndex].toString();
+        controllers.add(
+            TextEditingController(text: letter.trim().isEmpty ? "" : letter));
+      }
+
+      textControllers.add(controllers);
     }
   }
 
@@ -67,6 +87,32 @@ class _PuzzleViewState extends State<PuzzleView> {
         }
       }
     }
+  }
+
+  Future<void> _saveSolution() async {
+    List<String> solution = [];
+
+    var rows = widget.puzzle.rows;
+
+    for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+      var row = rows[rowIndex];
+
+      String rowSolution = "";
+      for (var letterIndex = 0;
+          letterIndex < row.answer.length;
+          letterIndex++) {
+        String letterValue = widget.textControllers[rowIndex][letterIndex].text;
+        assert(letterValue.length <= 1);
+
+        rowSolution += letterValue.isEmpty ? " " : letterValue;
+      }
+      assert(rowSolution.length == row.answer.length);
+
+      solution.add(rowSolution);
+    }
+
+    var prefs = await SharedPreferences.getInstance();
+    prefs.setStringList("puzzle_${widget.puzzle.id}", solution);
   }
 
   Widget _rowTextInput(BuildContext context, int rowIndex) {
@@ -128,7 +174,7 @@ class _PuzzleViewState extends State<PuzzleView> {
                     controller.selection =
                         TextSelection.collapsed(offset: controller.text.length);
                   },
-                  onChanged: (value) {
+                  onChanged: (value) async {
                     if (letterNumber != null) {
                       _fillMatchingLetters(letterNumber, value);
                     }
@@ -140,6 +186,8 @@ class _PuzzleViewState extends State<PuzzleView> {
                     if (value.isEmpty && i != 0) {
                       FocusScope.of(context).previousFocus();
                     }
+
+                    _saveSolution();
                   },
                 ),
               ),
@@ -172,6 +220,7 @@ class _PuzzleViewState extends State<PuzzleView> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(row.hint),
+        const SizedBox(height: 4.0),
         _rowTextInput(context, rowIndex),
       ],
     );
