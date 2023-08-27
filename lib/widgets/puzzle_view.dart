@@ -32,6 +32,35 @@ class _PuzzleViewState extends State<PuzzleView> {
     return firstRow.offset + firstRow.answer.indexOf(widget.puzzle.solution[0]);
   }
 
+  Widget _letterNumber(PuzzleRow row, int charIndex) {
+    var numberIndex = row.numbers
+        .where((n) => n.index == charIndex)
+        .toList()
+        .elementAtOrNull(0)
+        ?.index;
+
+    int? number;
+
+    if (numberIndex != null) {
+      number = widget.puzzle.legends
+          .where((l) => l.letter == row.answer[numberIndex])
+          .toList()[0]
+          .number;
+    }
+
+    return number == null
+        ? Container()
+        : Padding(
+            padding: const EdgeInsets.only(left: 1.0),
+            child: Text(
+              number.toString(),
+              style: const TextStyle(
+                fontSize: 10,
+              ),
+            ),
+          );
+  }
+
   Widget _rowTextInput(BuildContext context, int rowIndex) {
     var row = widget.puzzle.rows[rowIndex];
 
@@ -52,21 +81,6 @@ class _PuzzleViewState extends State<PuzzleView> {
     }
 
     for (var i = 0; i < row.answer.characters.length; i++) {
-      var numberIndex = row.numbers
-          .where((n) => n.index == i)
-          .toList()
-          .elementAtOrNull(0)
-          ?.index;
-
-      int? number;
-
-      if (numberIndex != null) {
-        number = widget.puzzle.legends
-            .where((l) => l.letter == row.answer[numberIndex])
-            .toList()[0]
-            .number;
-      }
-
       var controller = widget.textControllers[rowIndex][i];
 
       letterWidgets.add(
@@ -113,17 +127,7 @@ class _PuzzleViewState extends State<PuzzleView> {
                   },
                 ),
               ),
-              number == null
-                  ? const Text("")
-                  : Padding(
-                      padding: const EdgeInsets.only(left: 1.0),
-                      child: Text(
-                        number.toString(),
-                        style: const TextStyle(
-                          fontSize: 10,
-                        ),
-                      ),
-                    ),
+              _letterNumber(row, i),
             ],
           ),
         ),
