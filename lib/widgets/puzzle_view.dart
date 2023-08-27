@@ -29,7 +29,6 @@ class PuzzleView extends StatelessWidget {
 
   Widget _rowTextInput(BuildContext context, PuzzleRow row) {
     List<Widget> letterWidgets = [];
-    FocusNode? focus;
 
     int solutionColumn = _determineSolutionColumn();
 
@@ -46,7 +45,7 @@ class PuzzleView extends StatelessWidget {
     }
 
     for (var i = 0; i < row.answer.characters.length; i++) {
-      var nextFocus = FocusNode();
+      var controller = TextEditingController();
 
       letterWidgets.add(
         Padding(
@@ -62,7 +61,7 @@ class PuzzleView extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: TextField(
-              focusNode: focus,
+              controller: controller,
               autofocus: true,
               maxLength: 1,
               textAlign: TextAlign.center,
@@ -75,18 +74,23 @@ class PuzzleView extends StatelessWidget {
                   bottom: 15,
                 ),
               ),
+              onTap: () {
+                controller.selection =
+                    TextSelection.collapsed(offset: controller.text.length);
+              },
               onChanged: (value) {
                 if (value.length == 1 &&
                     i != row.answer.characters.length - 1) {
-                  FocusScope.of(context).requestFocus(nextFocus);
+                  FocusScope.of(context).nextFocus();
+                }
+                if (value.isEmpty && i != 0) {
+                  FocusScope.of(context).previousFocus();
                 }
               },
             ),
           ),
         ),
       );
-
-      focus = nextFocus;
     }
 
     return Row(
@@ -108,7 +112,7 @@ class PuzzleView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.separated(
       separatorBuilder: (context, index) => const Divider(),
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
       itemCount: puzzle.rows.length,
       itemBuilder: (context, index) => _puzzleRow(context, puzzle.rows[index]),
     );
