@@ -3,23 +3,38 @@ import 'package:flutter/material.dart';
 import '../models/puzzle.dart';
 import '../test_formatters.dart';
 
-class PuzzleView extends StatelessWidget {
+class PuzzleView extends StatefulWidget {
+  final Puzzle puzzle;
+  final List<List<TextEditingController>> textControllers;
+
+  PuzzleView({
+    super.key,
+    required this.puzzle,
+  }) : textControllers = [] {
+    for (var row in puzzle.rows) {
+      textControllers.add(
+          row.answer.characters.map((_) => TextEditingController()).toList());
+    }
+  }
+
+  @override
+  State<StatefulWidget> createState() {
+    return _PuzzleViewState();
+  }
+}
+
+class _PuzzleViewState extends State<PuzzleView> {
   static const double letterWidth = 28;
   static const double letterHeight = 34;
 
-  final Puzzle puzzle;
-
-  const PuzzleView({
-    super.key,
-    required this.puzzle,
-  });
-
   int _determineSolutionColumn() {
-    var firstRow = puzzle.rows[0];
-    return firstRow.offset + firstRow.answer.indexOf(puzzle.solution[0]);
+    var firstRow = widget.puzzle.rows[0];
+    return firstRow.offset + firstRow.answer.indexOf(widget.puzzle.solution[0]);
   }
 
-  Widget _rowTextInput(BuildContext context, PuzzleRow row) {
+  Widget _rowTextInput(BuildContext context, int rowIndex) {
+    var row = widget.puzzle.rows[rowIndex];
+
     List<Widget> letterWidgets = [];
 
     int solutionColumn = _determineSolutionColumn();
@@ -37,8 +52,6 @@ class PuzzleView extends StatelessWidget {
     }
 
     for (var i = 0; i < row.answer.characters.length; i++) {
-      var controller = TextEditingController();
-
       var numberIndex = row.numbers
           .where((n) => n.index == i)
           .toList()
@@ -48,11 +61,13 @@ class PuzzleView extends StatelessWidget {
       int? number;
 
       if (numberIndex != null) {
-        number = puzzle.legends
+        number = widget.puzzle.legends
             .where((l) => l.letter == row.answer[numberIndex])
             .toList()[0]
             .number;
       }
+
+      var controller = widget.textControllers[rowIndex][i];
 
       letterWidgets.add(
         Padding(
@@ -120,12 +135,14 @@ class PuzzleView extends StatelessWidget {
     );
   }
 
-  Widget _puzzleRow(BuildContext context, PuzzleRow row) {
+  Widget _puzzleRow(BuildContext context, int rowIndex) {
+    var row = widget.puzzle.rows[rowIndex];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(row.hint),
-        _rowTextInput(context, row),
+        _rowTextInput(context, rowIndex),
       ],
     );
   }
@@ -135,8 +152,8 @@ class PuzzleView extends StatelessWidget {
     return ListView.separated(
       separatorBuilder: (context, index) => const Divider(),
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-      itemCount: puzzle.rows.length,
-      itemBuilder: (context, index) => _puzzleRow(context, puzzle.rows[index]),
+      itemCount: widget.puzzle.rows.length,
+      itemBuilder: _puzzleRow,
     );
   }
 }
