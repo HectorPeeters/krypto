@@ -15,6 +15,9 @@ class UpperCaseTextFormatter extends TextInputFormatter {
 }
 
 class PuzzleView extends StatelessWidget {
+  static const double letterWidth = 28;
+  static const double letterHeight = 34;
+
   final Puzzle puzzle;
 
   const PuzzleView({
@@ -37,8 +40,8 @@ class PuzzleView extends StatelessWidget {
         const Padding(
           padding: EdgeInsets.all(1.0),
           child: SizedBox(
-            width: 24,
-            height: 30,
+            width: letterWidth,
+            height: letterHeight,
           ),
         ),
       );
@@ -47,47 +50,77 @@ class PuzzleView extends StatelessWidget {
     for (var i = 0; i < row.answer.characters.length; i++) {
       var controller = TextEditingController();
 
+      var numberIndex = row.numbers
+          .where((n) => n.index == i)
+          .toList()
+          .elementAtOrNull(0)
+          ?.index;
+
+      int? number;
+
+      if (numberIndex != null) {
+        number = puzzle.legends
+            .where((l) => l.letter == row.answer[numberIndex])
+            .toList()[0]
+            .number;
+      }
+
       letterWidgets.add(
         Padding(
           padding: const EdgeInsets.all(1.0),
-          child: Container(
-            width: 24,
-            height: 30,
-            decoration: BoxDecoration(
-              color: (i + row.offset - 1 == solutionColumn)
-                  ? Colors.red
-                  : Theme.of(context).colorScheme.primaryContainer,
-              borderRadius: const BorderRadius.all(Radius.circular(4)),
-            ),
-            alignment: Alignment.center,
-            child: TextField(
-              controller: controller,
-              autofocus: true,
-              maxLength: 1,
-              textAlign: TextAlign.center,
-              textAlignVertical: TextAlignVertical.center,
-              inputFormatters: [UpperCaseTextFormatter()],
-              decoration: const InputDecoration(
-                counterText: '',
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.only(
-                  bottom: 15,
+          child: Stack(
+            children: [
+              Container(
+                width: letterWidth,
+                height: letterHeight,
+                decoration: BoxDecoration(
+                  color: (i + row.offset - 1 == solutionColumn)
+                      ? Colors.redAccent
+                      : Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: const BorderRadius.all(Radius.circular(4)),
+                ),
+                alignment: Alignment.center,
+                child: TextField(
+                  controller: controller,
+                  autofocus: true,
+                  maxLength: 1,
+                  textAlign: TextAlign.center,
+                  textAlignVertical: TextAlignVertical.center,
+                  inputFormatters: [UpperCaseTextFormatter()],
+                  decoration: const InputDecoration(
+                    counterText: '',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.only(
+                      bottom: letterHeight * 0.4,
+                    ),
+                  ),
+                  onTap: () {
+                    controller.selection =
+                        TextSelection.collapsed(offset: controller.text.length);
+                  },
+                  onChanged: (value) {
+                    if (value.length == 1 &&
+                        i != row.answer.characters.length - 1) {
+                      FocusScope.of(context).nextFocus();
+                    }
+                    if (value.isEmpty && i != 0) {
+                      FocusScope.of(context).previousFocus();
+                    }
+                  },
                 ),
               ),
-              onTap: () {
-                controller.selection =
-                    TextSelection.collapsed(offset: controller.text.length);
-              },
-              onChanged: (value) {
-                if (value.length == 1 &&
-                    i != row.answer.characters.length - 1) {
-                  FocusScope.of(context).nextFocus();
-                }
-                if (value.isEmpty && i != 0) {
-                  FocusScope.of(context).previousFocus();
-                }
-              },
-            ),
+              number == null
+                  ? const Text("")
+                  : Padding(
+                      padding: const EdgeInsets.only(left: 1.0),
+                      child: Text(
+                        number.toString(),
+                        style: const TextStyle(
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+            ],
           ),
         ),
       );
