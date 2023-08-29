@@ -255,8 +255,11 @@ class _PuzzleViewState extends State<PuzzleView> {
       );
     }
 
-    return Row(
-      children: letterWidgets,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: letterWidgets,
+      ),
     );
   }
 
