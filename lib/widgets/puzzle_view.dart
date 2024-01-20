@@ -101,6 +101,8 @@ class _PuzzleViewState extends State<PuzzleView> {
     for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
       var row = rows[rowIndex];
 
+      var rowIncorrect = false;
+
       for (var letterIndex = 0;
           letterIndex < row.answer.length;
           letterIndex++) {
@@ -110,9 +112,15 @@ class _PuzzleViewState extends State<PuzzleView> {
 
         var expected = widget.puzzle.rows[rowIndex].answer[letterIndex];
 
+        rowIncorrect &= (letter == expected);
+      }
+
+      for (var letterIndex = 0;
+          letterIndex < row.answer.length;
+          letterIndex++) {
         setState(() {
           textColors[rowIndex][letterIndex] =
-              letter == expected ? correctColor : incorrectColor;
+              rowIncorrect ? incorrectColor : correctColor;
         });
       }
     }
@@ -132,7 +140,7 @@ class _PuzzleViewState extends State<PuzzleView> {
     }
   }
 
-  Future<void> _saveSolution() async {
+  List<String> _getSolution() {
     List<String> solution = [];
 
     var rows = widget.puzzle.rows;
@@ -154,6 +162,11 @@ class _PuzzleViewState extends State<PuzzleView> {
       solution.add(rowSolution);
     }
 
+    return solution;
+  }
+
+  Future<void> _saveSolution() async {
+    var solution = _getSolution();
     var prefs = await SharedPreferences.getInstance();
     prefs.setStringList("puzzle_${widget.puzzle.id}", solution);
   }
